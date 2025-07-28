@@ -1,9 +1,9 @@
-import axios from "axios";
 import { extractPlainText } from "../utils/extractPlainText";
+import api from "../utils/axiosInstance";
 
 export async function getQueryResponse(query: string): Promise<string> {
   try {
-    const response = await axios.post(
+    const response = await api.post(
       "https://api.mefqna.dev.rumsan.net/query/query_collection",
       {
         query,
