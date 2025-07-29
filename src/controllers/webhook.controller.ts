@@ -18,19 +18,16 @@ export async function verifyWebhook(req: Request, res: Response) {
 
 export async function receiveMessage(req: Request, res: Response) {
   const body = req.body;
-
   if (body.object === "page") {
     for (const entry of body.entry as WebhookEntry[]) {
       const event = entry.messaging[0];
       const senderId = event.sender.id;
-
       if (event.message) {
         await handleMessage(senderId, event.message);
       } else if (event.postback) {
         await handlePostback(senderId, event.postback);
       }
     }
-
     res.status(200).send("EVENT_RECEIVED");
   } else {
     res.sendStatus(404);

@@ -14,6 +14,9 @@ export interface MessageEvent {
   mid: string;
   text?: string;
   attachments?: Attachment[];
+  quick_reply?: {
+    payload: string;
+  };
 }
 
 export interface Attachment {
