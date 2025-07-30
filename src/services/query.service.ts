@@ -1,16 +1,13 @@
 import { extractPlainText } from "../utils/extractPlainText";
-import api from "../utils/axiosInstance";
+import { botApi } from "../utils/axiosInstance";
 
 export async function getQueryResponse(query: string): Promise<string> {
   try {
-    const response = await api.post(
-      "https://api.mefqna.dev.rumsan.net/query/query_collection",
-      {
-        query,
-        top_k: 3,
-        temperature: 0.3,
-      }
-    );
+    const response = await botApi.post("", {
+      query,
+      top_k: 3,
+      temperature: 0.3,
+    });
 
     const answer =
       extractPlainText(response.data?.response || "") ||

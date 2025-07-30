@@ -1,4 +1,10 @@
 import axios from "axios";
+import { config } from "../config/config";
 
-const api = axios.create();
-export default api;
+export const facebookApi = axios.create({
+  baseURL: config.facebookGraphApiBase,
+});
+
+export const botApi = axios.create({
+  baseURL: config.botApiBase,
+});
