@@ -4,14 +4,14 @@ import { setupGetStartedButton } from "./services/messenger.service";
 
 const server = app.listen(config.port, async () => {
   console.log(`Server is running on port ${config.port}`);
-  try {
-    await setupGetStartedButton();
-    // await setupGreeting();
-    // await setupPersistentMenu();
-  } catch (error: unknown) {
-    console.error(
-      "Error setting up Messenger profile:",
-      (error as any).data.error
-    );
-  }
+  // try {
+  //   await setupGetStartedButton();
+  //   await setupGreeting();
+  //   await setupPersistentMenu();
+  // } catch (error: unknown) {
+  //   console.error(
+  //     "Error setting up Messenger profile:",
+  //     (error as any).data.error
+  //   );
+  // }
 });

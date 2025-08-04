@@ -8,3 +8,10 @@ export const facebookApi = axios.create({
 export const botApi = axios.create({
   baseURL: config.botApiBase,
 });
+export const whatsAppApi = axios.create({
+  baseURL: config.whatsAppBaseApi,
+  headers: {
+    Authorization: `Bearer ${config.whatsAppAccessToken}`, // fixed token
+    "Content-Type": "application/json",
+  },
+});
