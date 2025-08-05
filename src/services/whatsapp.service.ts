@@ -1,22 +1,30 @@
 import { config } from "../config/config";
 import { whatsAppApi } from "../utils/axiosInstance";
+import { getQueryResponse } from "./query.service";
 
-export function handleWhatsAppMessage(message: any, value: any) {
+export async function handleWhatsAppMessage(message: any, value: any) {
   const from = message.from; // Phone number
   const messageBody = message.text?.body;
   const messageType = message.type;
 
   console.log(`WhatsApp message from ${from}: ${messageBody}`);
+  if (messageType === "text" && messageBody) {
+    try {
+      const botResponse = await getQueryResponse(messageBody);
+      sendTemplateMessage(from, botResponse);
+    } catch (error) {
+      console.error("Error processing message:", error);
 
-  // Send reply
-  sendWhatsAppMessage(from, "Hello i am mef assistant");
+      await sendTemplateMessage(
+        from,
+        "Sorry, I encountered an error processing your request. Please try again later."
+      );
+    }
+  }
 }
 
 export async function sendWhatsAppMessage(to: any, messageText: any) {
   const phoneNumberId = config.whatsAppPhoneId;
-  //   const accessToken = config.whatsAppAccessToken;
-
-  //   const url = `https://graph.facebook.com/v17.0/${phoneNumberId}/messages`;
 
   const data = {
     messaging_product: "whatsapp",
@@ -24,20 +32,39 @@ export async function sendWhatsAppMessage(to: any, messageText: any) {
     text: { body: messageText },
   };
 
-  // fetch(url, {
-  //   method: "POST",
-  //   headers: {
-  //     Authorization: `Bearer ${accessToken}`,
-  //     "Content-Type": "application/json",
-  //   },
-  //   body: JSON.stringify(data),
-  // })
-  //   .then((response) => response.json())
-  //   .then((data) => console.log("WhatsApp message sent:", data))
-  //   .catch((error) => console.error("Error:", error));
   try {
     await whatsAppApi.post(`/${phoneNumberId}/messages`, data);
   } catch (error) {
     console.error("Send Api error:", error);
+  }
+}
+export async function sendTemplateMessage(to: string, responseText: string) {
+  const phoneNumberId = config.whatsAppPhoneId;
+  const data = {
+    messaging_product: "whatsapp",
+    to: to,
+    type: "template",
+    template: {
+      name: "reply_from_mefqna",
+      language: {
+        code: "en",
+      },
+      components: [
+        {
+          type: "body",
+          parameters: [
+            {
+              type: "text",
+              text: responseText,
+            },
+          ],
+        },
+      ],
+    },
+  };
+  try {
+    await whatsAppApi.post(`/${phoneNumberId}/messages`, data);
+  } catch (error) {
+    console.error("Template send error:", error);
   }
 }
