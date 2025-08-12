@@ -9,9 +9,9 @@ export const botApi = axios.create({
   baseURL: config.botApiBase,
 });
 export const whatsAppApi = axios.create({
-  baseURL: config.whatsAppBaseApi,
+  baseURL: config.whatsApp.whatsAppBaseApi,
   headers: {
-    Authorization: `Bearer ${config.whatsAppAccessToken}`, // fixed token
+    Authorization: `Bearer ${config.whatsApp.whatsAppAccessToken}`, // fixed token
     "Content-Type": "application/json",
   },
 });

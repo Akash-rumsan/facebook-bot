@@ -24,7 +24,7 @@ export async function handleWhatsAppMessage(message: any, value: any) {
 }
 
 export async function sendWhatsAppMessage(to: any, messageText: any) {
-  const phoneNumberId = config.whatsAppPhoneId;
+  const phoneNumberId = config.whatsApp.whatsAppPhoneId;
 
   const data = {
     messaging_product: "whatsapp",
@@ -39,7 +39,7 @@ export async function sendWhatsAppMessage(to: any, messageText: any) {
   }
 }
 export async function sendTemplateMessage(to: string, responseText: string) {
-  const phoneNumberId = config.whatsAppPhoneId;
+  const phoneNumberId = config.whatsApp.whatsAppPhoneId;
   const data = {
     messaging_product: "whatsapp",
     to: to,
