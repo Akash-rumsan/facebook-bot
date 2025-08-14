@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook Embedded Signup</title>
+</head>
+
+<body>
+    <h1>Login with Facebook</h1>
+
+    <!-- SDK loading -->
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+
+    <script>
+        // SDK initialization
+        window.fbAsyncInit = function () {
+            FB.init({
+                appId: '<%= appId %>', // Passed from controller
+                autoLogAppEvents: true,
+                xfbml: true,
+                version: '<%= graphApiVersion %>' // Passed from controller
+            });
+        };
+
+        // Session logging message event listener
+        window.addEventListener('message', (event) => {
+            if (!event.origin.endsWith('facebook.com')) return;
+            try {
+                const data = JSON.parse(event.data);
+                console.log('message event:', data); // Remove after testing
+                if (data.type === 'WA_EMBEDDED_SIGNUP') {
+                    console.log('message event:', data); // Remove after testing
+                    // Send asset IDs or error data to the server
+                    // fetch('/auth/facebook/callback', {
+                    //     method: 'POST',
+                    //     headers: { 'Content-Type': 'application/json' },
+                    //     body: JSON.stringify(data)
+                    // })
+                    //     .then(response => response.json())
+                    //     .then(result => console.log('Server response:', result))
+                    //     .catch(error => console.error('Error sending data to server:', error));
+                    const result = axios.post('/auth/facebook/callback', data);
+                    if (result.status === 200) {
+
+                        console.log('Server response:', result.data);
+                        res.JSON(result.data);
+                    } else {
+                        console.error('Error sending data to server:', result.statusText);
+                    }
+                }
+            } catch {
+                console.log('message event:', event.data); // Remove after testing
+            }
+        });
+
+        // Response callback
+        const fbLoginCallback = (response) => {
+            console.log('fbLoginCallback response outside ifelse', response); // Remove after testing
+            if (response.authResponse) {
+                const code = response.authResponse.code;
+                console.log('response in fbLogin:', code); // Remove after testing
+                // Send the code to the server
+                fetch('/auth/facebook/callback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code })
+                })
+                    .then(response => response.json())
+                    .then(result => console.log('Server response:', result))
+                    .catch(error => console.error('Error sending code to server:', error));
+            } else {
+                console.log('response:', response); // Remove after testing
+                // Send error to the server
+                fetch('/auth/facebook/callback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ error: response })
+                })
+                    .then(response => response.json())
+                    .then(result => console.log('Server response:', result))
+                    .catch(error => console.error('Error sending error to server:', error));
+            }
+        };
+
+        // Launch method and callback registration
+        const launchWhatsAppSignup = () => {
+            FB.login(fbLoginCallback, {
+                config_id: '<%= configId %>', // Passed from controller
+                response_type: 'code',
+                override_default_response_type: true,
+                scope: 'public_profile,email,whatsapp_business_management',
+                extras: {
+                    setup: {},
+                    featureType: '<%= featureType %>', // Passed from controller
+                    sessionInfoVersion: '3'
+                }
+            });
+        };
+    </script>
+
+    <!-- Launch button -->
+    <button onclick="launchWhatsAppSignup()"
+        style="background-color: #1877f2; border: 0; border-radius: 4px; color: #fff; cursor: pointer; font-family: Helvetica, Arial, sans-serif; font-size: 16px; font-weight: bold; height: 40px; padding: 0 24px;">
+        Login with Facebook
+    </button>
+</body>
+
+</html>

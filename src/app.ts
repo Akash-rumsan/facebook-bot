@@ -4,6 +4,7 @@ import webhookRoutes from "./routes/webhook.routes";
 import session from "express-session";
 import passport from "passport";
 import facebookRoutes from "./routes/facebook.routes";
+import { renderSignupPage } from "./controllers/facebook.controller";
 
 const app = express();
 
@@ -23,5 +24,6 @@ app.use("/", facebookRoutes);
 app.get("/", (_, res) => {
   res.render("pages/index.ejs");
 });
+// app.get("/", renderSignupPage);
 
 export default app;
