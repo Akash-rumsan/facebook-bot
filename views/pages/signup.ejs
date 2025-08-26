@@ -10,90 +10,95 @@
 <body>
     <h1>Login with Facebook</h1>
 
-    <!-- SDK loading -->
     <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
 
     <script>
-        // SDK initialization
         window.fbAsyncInit = function () {
             FB.init({
-                appId: '<%= appId %>', // Passed from controller
+                appId: '<%= appId %>',
                 autoLogAppEvents: true,
                 xfbml: true,
-                version: '<%= graphApiVersion %>' // Passed from controller
+                version: '<%= graphApiVersion %>'
             });
         };
+
+        let signupCode = null; // Temporary storage for code from callback
 
         // Session logging message event listener
         window.addEventListener('message', (event) => {
             if (!event.origin.endsWith('facebook.com')) return;
             try {
                 const data = JSON.parse(event.data);
-                console.log('message event:', data); // Remove after testing
+                console.log('message event:', data);
                 if (data.type === 'WA_EMBEDDED_SIGNUP') {
-                    console.log('message event:', data); // Remove after testing
-                    // Send asset IDs or error data to the server
-                    // fetch('/auth/facebook/callback', {
-                    //     method: 'POST',
-                    //     headers: { 'Content-Type': 'application/json' },
-                    //     body: JSON.stringify(data)
-                    // })
-                    //     .then(response => response.json())
-                    //     .then(result => console.log('Server response:', result))
-                    //     .catch(error => console.error('Error sending data to server:', error));
-                    const result = axios.post('/auth/facebook/callback', data);
-                    if (result.status === 200) {
-
-                        console.log('Server response:', result.data);
-                        res.JSON(result.data);
+                    let payload = {};
+                    if (data.event === 'FINISH') {
+                        payload = {
+                            code: signupCode, // Include stored code
+                            phone_number_id: data.phone_number_id,
+                            waba_id: data.waba_id,
+                            business_id: data.business_id
+                        };
+                    } else if (data.event === 'CANCEL') {
+                        payload = {
+                            code: signupCode,
+                            error: data.error_message,
+                            error_id: data.error_id,
+                            session_id: data.session_id,
+                            timestamp: data.timestamp
+                        };
                     } else {
-                        console.error('Error sending data to server:', result.statusText);
+                        payload = {
+                            code: signupCode,
+                            error: 'Abandoned flow',
+                            current_step: data.current_step
+                        };
                     }
+                    // Send combined payload to server
+                    fetch('/auth/facebook/callback', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    })
+                        .then(response => response.json())
+                        .then(result => console.log('Server response in event listener:', result))
+                        .catch(error => console.error('Error sending data to server:', error));
+
+                    signupCode = null;
                 }
             } catch {
-                console.log('message event:', event.data); // Remove after testing
+                console.log('message event in catch', event.data); // Remove after testing
             }
         });
 
         // Response callback
         const fbLoginCallback = (response) => {
-            console.log('fbLoginCallback response outside ifelse', response); // Remove after testing
+            console.log('fbLoginCallback response outside ifelse', response);
             if (response.authResponse) {
-                const code = response.authResponse.code;
-                console.log('response in fbLogin:', code); // Remove after testing
-                // Send the code to the server
-                fetch('/auth/facebook/callback', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ code })
-                })
-                    .then(response => response.json())
-                    .then(result => console.log('Server response:', result))
-                    .catch(error => console.error('Error sending code to server:', error));
+                signupCode = response.authResponse.code;
+                console.log('response in fbLogin:', signupCode);
             } else {
-                console.log('response:', response); // Remove after testing
-                // Send error to the server
+                console.log('response:', response);
                 fetch('/auth/facebook/callback', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ error: response })
                 })
                     .then(response => response.json())
-                    .then(result => console.log('Server response:', result))
+                    .then(result => console.log('Server response in callback:', result))
                     .catch(error => console.error('Error sending error to server:', error));
             }
         };
-
         // Launch method and callback registration
         const launchWhatsAppSignup = () => {
             FB.login(fbLoginCallback, {
-                config_id: '<%= configId %>', // Passed from controller
+                config_id: '<%= configId %>',
                 response_type: 'code',
                 override_default_response_type: true,
                 scope: 'public_profile,email,whatsapp_business_management',
                 extras: {
                     setup: {},
-                    featureType: '<%= featureType %>', // Passed from controller
+                    featureType: '<%= featureType %>',
                     sessionInfoVersion: '3'
                 }
             });

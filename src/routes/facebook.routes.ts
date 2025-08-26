@@ -11,7 +11,7 @@ import {
 const router = Router();
 
 router.get("/auth/facebook", renderSignupPage);
-router.get("/auth/facebook/callback", handleSignupCallback);
+router.post("/auth/facebook/callback", handleSignupCallback);
 router.get("/profile", getProfile);
 router.get("/logout", logout);
 

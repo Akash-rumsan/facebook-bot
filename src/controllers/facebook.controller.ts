@@ -2,9 +2,10 @@ import { Request, Response, NextFunction } from "express";
 import passport from "passport";
 import { Strategy as FacebookStrategy } from "passport-facebook";
 import { config } from "../config/config";
+import sqlite3 from "sqlite3";
 
 // Extend express-session types to include 'user' property
-import session from "express-session";
+import axios from "axios";
 declare module "express-session" {
   interface SessionData {
     user?: {
@@ -71,59 +72,100 @@ export const logout = (req: Request, res: Response, next: NextFunction) => {
     res.redirect("/");
   });
 };
+
+const db = new sqlite3.Database("db/credentials.db", (err) => {
+  if (err) {
+    console.error("Error opening database:", err.message);
+  } else {
+    console.log("Connected to SQLite database.");
+    // Create table if it doesn't exist
+    db.run(`
+      CREATE TABLE IF NOT EXISTS credentials (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        access_token TEXT NOT NULL,
+        waba_id TEXT NOT NULL,
+        phone_number_id TEXT NOT NULL,
+        business_id TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+  }
+});
+
+async function exchangeCodeForToken(code: string) {
+  const response = await axios.post(
+    "https://graph.facebook.com/v23.0/oauth/access_token",
+    {
+      client_id: config.facebook.appId,
+      client_secret: config.facebook.appSecret,
+      redirect_uri: config.facebook.callbackURL,
+      code,
+    }
+  );
+  return response.data;
+}
+
 export const renderSignupPage = (req: Request, res: Response) => {
   res.render("pages/signup.ejs", {
     appId: config.facebook.appId,
-    graphApiVersion: "v23.0", // Replace with the latest Graph API version
-    configId: config.facebook.configId, // Add configId to your config file
-    featureType: "", // Set to appropriate feature type (e.g., "only_waba_sharing")
+    graphApiVersion: "v23.0",
+    configId: config.facebook.configId,
+    featureType: "",
   });
 };
 export const handleSignupCallback = async (req: Request, res: Response) => {
-  console.log("handleSignupCallback called");
   const { code, phone_number_id, waba_id, business_id, error } = req.body;
+  console.log(req.body, "req.body");
   console.log(
     code,
     phone_number_id,
     waba_id,
     business_id,
     error,
-    "in handleSignupCallback"
+    "checking from req.body"
   );
 
   if (error) {
     console.error("Error in Embedded Signup:", error);
     return res.status(400).json({ message: "Embedded Signup failed", error });
   }
+  let accessToken: string | undefined;
 
-  if (code) {
-    console.log("Received code:", code);
-    // Example: Send the code to your server for token exchange
-    try {
-      req.session.user = { code, phone_number_id, waba_id, business_id };
-      return res
-        .status(200)
-        .json({ message: "Signup successful", data: req.session.user });
-    } catch (err) {
-      console.error("Token exchange failed:", err);
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      return res
-        .status(500)
-        .json({ message: "Token exchange failed", error: errorMessage });
+  try {
+    if (code) {
+      // Exchange code for access token
+      const tokenData = await exchangeCodeForToken(code);
+      console.log(tokenData, "token data");
+      accessToken = tokenData.access_token;
+      console.log("Access Token:", accessToken);
     }
-  } else if (phone_number_id && waba_id && business_id) {
-    // Handle successful flow completion (asset IDs returned)
-    console.log("Received asset IDs:", {
-      phone_number_id,
-      waba_id,
-      business_id,
-    });
-    // Store asset IDs in your database or session
-    req.session.user = { phone_number_id, waba_id, business_id };
+    if (phone_number_id && waba_id && business_id) {
+      // Store credentials in the database
+      db.run(
+        `INSERT INTO credentials (access_token, waba_id, phone_id, business_id) VALUES (?, ?, ?, ?)`,
+        [accessToken, waba_id, phone_number_id, business_id],
+        function (err) {
+          if (err) {
+            console.error("Error inserting credentials:", err.message);
+            return res
+              .status(500)
+              .json({ message: "Database error", error: err.message });
+          }
+          console.log("Credentials stored successfully with ID:", this.lastID);
+          req.session.user = { phone_number_id, waba_id, business_id };
+          return res
+            .status(200)
+            .json({ message: "Signup successful", data: req.session.user });
+        }
+      );
+    } else {
+      return res.status(400).json({ message: "Invalid callback data" });
+    }
+  } catch (err) {
+    console.error("Error handling signup callback:", err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
     return res
-      .status(200)
-      .json({ message: "Signup successful", data: req.session.user });
-  } else {
-    return res.status(400).json({ message: "Invalid callback data" });
+      .status(500)
+      .json({ message: "Signup failed", error: errorMessage });
   }
 };
