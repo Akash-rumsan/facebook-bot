@@ -30,14 +30,15 @@
             try {
                 const data = JSON.parse(event.data);
                 console.log('message event:', data);
+                console.log('signupCode before ifelse:', signupCode);
                 if (data.type === 'WA_EMBEDDED_SIGNUP') {
                     let payload = {};
                     if (data.event === 'FINISH') {
                         payload = {
                             code: signupCode, // Include stored code
-                            phone_number_id: data.phone_number_id,
-                            waba_id: data.waba_id,
-                            business_id: data.business_id
+                            phone_number_id: data.data.phone_number_id,
+                            waba_id: data.data.waba_id,
+                            business_id: data.data.business_id
                         };
                     } else if (data.event === 'CANCEL') {
                         payload = {
