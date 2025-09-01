@@ -28,33 +28,36 @@
         window.addEventListener('message', (event) => {
             if (!event.origin.endsWith('facebook.com')) return;
             try {
-                const data = JSON.parse(event.data);
-                console.log('message event:', data);
+                const eventResponse = JSON.parse(event.data);
+                console.log('message event:', eventResponse);
                 console.log('signupCode before ifelse:', signupCode);
-                if (data.type === 'WA_EMBEDDED_SIGNUP') {
+                if (eventResponse.type === 'WA_EMBEDDED_SIGNUP') {
+
                     let payload = {};
-                    if (data.event === 'FINISH') {
+                    if (eventResponse.event === 'FINISH') {
                         payload = {
                             code: signupCode, // Include stored code
-                            phone_number_id: data.data.phone_number_id,
-                            waba_id: data.data.waba_id,
-                            business_id: data.data.business_id
+                            phone_number_id: eventResponse.data.phone_number_id,
+                            waba_id: eventResponse.data.waba_id,
+                            business_id: eventResponse.data.business_id
                         };
-                    } else if (data.event === 'CANCEL') {
+                    } else if (eventResponse.event === 'CANCEL') {
                         payload = {
                             code: signupCode,
-                            error: data.error_message,
-                            error_id: data.error_id,
-                            session_id: data.session_id,
+                            error: eventResponse.data.error_message,
+                            error_id: eventResponse.data.error_id,
+                            session_id: eventResponse.data.session_id,
                             timestamp: data.timestamp
                         };
                     } else {
                         payload = {
                             code: signupCode,
                             error: 'Abandoned flow',
-                            current_step: data.current_step
+                            current_step: eventResponse.data.current_step
                         };
                     }
+
+
                     // Send combined payload to server
                     fetch('/auth/facebook/callback', {
                         method: 'POST',

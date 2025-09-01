@@ -27,5 +27,20 @@ db.run(
     }
   }
 );
+db.run(
+  `CREATE TABLE IF NOT EXISTS template (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  template_id TEXT NOT NULL,
+  category TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);`,
+  (err) => {
+    if (err) {
+      console.error("Error creating template table:", err.message);
+    } else {
+      console.log("Template table created or already exists.");
+    }
+  }
+);
 
 export default db;

@@ -28,12 +28,12 @@ export default app;
 
 // Example endpoint to add credentials
 app.post("/credentials", (req, res) => {
-  const { access_token, waba_id, phone_id } = req.body;
+  const { access_token, waba_id, phone_id, business_id } = req.body;
   const sql = `
-    INSERT INTO credentials (access_token, waba_id, phone_id)
-    VALUES (?, ?, ?)
+    INSERT INTO credentials (access_token, waba_id, phone_id, business_id)
+    VALUES (?, ?, ?, ?)
   `;
-  db.run(sql, [access_token, waba_id, phone_id], function (err) {
+  db.run(sql, [access_token, waba_id, phone_id, business_id], function (err) {
     if (err) {
       return res.status(400).json({ error: err.message });
     }
